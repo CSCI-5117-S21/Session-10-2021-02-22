@@ -27,10 +27,17 @@ def setup():
 @contextmanager
 def get_db_connection():
     try:
-        connection = pool.getconn()
+        connection = None
+        while connection is None:
+            try:
+                connection = pool.getconn()
+            except:
+                current_app.logger.info("failed to get connection. retrying immediately.")
+
         yield connection
     finally:
-        pool.putconn(connection)
+        if connection is not None:
+            pool.putconn(connection)
 
 
 @contextmanager

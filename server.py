@@ -1,7 +1,10 @@
-from flask import Flask, render_template, request, g, redirect, url_for, jsonify, abort, session
+
+from flask import Flask, render_template, request, g, redirect, url_for, jsonify, abort, session, send_file
+from werkzeug.utils import secure_filename
 from urllib.parse import urlencode
-import os
-import db
+import os, math
+
+import db, io
 from auth0 import auth0_setup, require_auth, auth0
 
 
@@ -53,14 +56,93 @@ def test_auth():
 
 
 
+### IMAGES
+@app.route('/image/<int:img_id>')
+def view_image(img_id):
+    with db.get_db_cursor() as cur:
+        cur.execute("SELECT * FROM images where image_id=%s", (img_id,))
+        image_row = cur.fetchone() # just another way to interact with cursors
+         
+        # in memory pyhton IO stream
+        stream = io.BytesIO(image_row["data"])
+         
+        # use special "send_file" function
+        return send_file(stream, attachment_filename=image_row["filename"])
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ['png', 'jpg', "gif"]
+
+
+@app.route('/image', methods=['POST'])
+@require_auth
+def upload_image():
+    # check if the post request has the file part
+    if 'image' not in request.files:
+        return redirect("image_gallery", status="Image Upload Failed: No selected file")
+    file = request.files['image']
+    # if user does not select file, browser also
+    # submit an empty part without filename
+    if file.filename == '':
+        return redirect("image_gallery", status="Image Upload Failed: No selected file")
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        data = file.read()
+        with db.get_db_cursor(True) as cur:
+            cur.execute("insert into images (filename, data) values (%s, %s)", (filename, data))
+    return redirect(url_for("image_gallery", status="Image Uploaded Succesfully"))
+        
+def try_parse_int(s, base=10, default=None):
+    """Parse an integer with a default"""
+    try:
+        return int(s, base)
+    except ValueError:
+        return default
+
+
+@app.route('/image', methods=['GET'])
+def image_gallery():
+    status = request.args.get("status", "")
+    page = try_parse_int(request.args.get("page", "0"), default=0)
+    IMAGES_PER_PAGE = 6
+
+    with db.get_db_cursor() as cur:
+        cur.execute("select image_id from images order by image_id desc limit %s offset %s ;", (IMAGES_PER_PAGE, page*IMAGES_PER_PAGE))
+        imageIds = [r[0] for r in cur]
+        cur.execute("select count(*) from images;")
+        image_count = cur.fetchone()[0]
+        max_page = math.ceil(1.0 * image_count / IMAGES_PER_PAGE) - 1
+        return render_template("gallery.html", imageIds = imageIds, status=status, page=page, max_page=max_page)
 
 
 
+
+### ROOT
 @app.route('/')
 def home():
     user_name = request.args.get("userName", "unknown")
     return render_template('main.html', user=user_name)
 
+
+@app.errorhandler(404)
+def error404(error):
+    return "oh no. you killed it."
+
+
+@app.route('/api/foo')
+def api_foo():
+    data = {
+        "message": "hello, world",
+        "isAGoodExample": False,
+        "aList": [1, 2, 3],
+        "nested": {
+            "key": "value"
+        }
+    }
+    return jsonify(data)
+
+
+### PEOPLE
 @app.route('/people', methods=['GET'])
 def people():
     with db.get_db_cursor() as cur:
@@ -96,20 +178,4 @@ def edit_person(id):
         cur.execute("UPDATE person set description = %s where person_id = %s;", (description, id))
         return redirect(url_for("get_person", id=id))
 
-@app.errorhandler(404)
-def error404(error):
-    return "oh no. you killed it."
-
-
-@app.route('/api/foo')
-def api_foo():
-    data = {
-        "message": "hello, world",
-        "isAGoodExample": False,
-        "aList": [1, 2, 3],
-        "nested": {
-            "key": "value"
-        }
-    }
-    return jsonify(data)
 

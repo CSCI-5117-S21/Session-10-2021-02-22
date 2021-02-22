@@ -1,5 +1,6 @@
 drop table gift_idea;
 drop table person;
+drop table images;
 
 create table person (
   person_id SERIAL PRIMARY KEY,
@@ -12,6 +13,13 @@ create table gift_idea (
   person_id int references person,
   product varchar(255) NOT NULL,
   external_link varchar(255)
+);
+
+-- A table to hold images.
+create table images (
+  image_id SERIAL PRIMARY KEY,
+  filename text,
+  data bytea
 );
 
 insert into person (name) values ('Yang He');
