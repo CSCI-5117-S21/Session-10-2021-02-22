@@ -24,7 +24,7 @@
 
 {% if session.profile %}
 <h2>add Your own</h2> 
-<form class="pure-form" method="post" enctype="multipart/form-data" target="{{url_for("upload_image")}}">
+<form class="pure-form" method="post" enctype="multipart/form-data" action="{{url_for("upload_image")}}">
   <fieldset>
       <input type="file" name="image" accept="image/jpeg,image/png,image/gif" />
       <button type="submit" class="pure-button pure-button-primary">Submit</button>

@@ -79,12 +79,12 @@ def allowed_file(filename):
 def upload_image():
     # check if the post request has the file part
     if 'image' not in request.files:
-        return redirect("image_gallery", status="Image Upload Failed: No selected file")
+        return redirect(url_for("image_gallery", status="Image Upload Failed: No selected file"))
     file = request.files['image']
     # if user does not select file, browser also
     # submit an empty part without filename
     if file.filename == '':
-        return redirect("image_gallery", status="Image Upload Failed: No selected file")
+        return redirect(url_for("image_gallery", status="Image Upload Failed: No selected file"))
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         data = file.read()
