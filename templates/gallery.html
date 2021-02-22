@@ -23,6 +23,7 @@
 <a href="{{url_for("image_gallery", page=page+1)}}">Next Page</a>
 {% endif %}
 
+{% if session.profile %}
 <h2>add Your own</h2> 
 <form class="pure-form" method="post" enctype="multipart/form-data" target="{{url_for("upload_image")}}">
   <fieldset>
@@ -30,6 +31,7 @@
       <button type="submit" class="pure-button pure-button-primary">Submit</button>
   </fieldset>
 </form>
+{% endif %}
 
 {% endblock %}
 
