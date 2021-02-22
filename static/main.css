@@ -7,10 +7,6 @@ body div#content {
     padding:1em;
 }
 
-body div.imageGallery div.image img {
-    width:100%;
-    height:100%;
-
-  object-fit:cover;
-  border-radius:50%;
+body div.imageGallery  img {
+  
 }

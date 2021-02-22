@@ -10,9 +10,8 @@
 
 <div class="imageGallery pure-g">
   {% for id in imageIds %}
-  <div class="pure-u-1-6 image">
-    <img src="{{url_for("view_image", img_id=id)}}"/>
-  </div>
+    <img class="pure-u-1-6 image" src="{{url_for("view_image", img_id=id)}}"/>
+  
   {% endfor %}
 </div>
 
